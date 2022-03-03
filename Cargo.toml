@@ -1,0 +1,39 @@
+[package]
+name = "esp32-build"
+version = "0.1.0"
+authors = ["daca <daca@itu.dk>"]
+edition = "2018"
+resolver = "2"
+
+[profile.release]
+opt-level = "s"
+
+[profile.dev]
+debug = true # Symbols are nice and they don't increase the size on Flash
+opt-level = "z"
+
+[features]
+default = ["native"]
+native = ["esp-idf-sys/native"]
+
+[dependencies]
+esp-idf-sys = { version = "0.30.6", features = ["binstart"] }
+
+serde = { version = "1.0.97", default-features = false, features = ["derive", "alloc"] }
+serde_cbor = { version = "0.11.2", default-features = false, features = ["alloc"] }
+serde_bytes = { version = "0.11.1", default-features = false, features = ["alloc"] }
+x25519-dalek = { version = "0.5.2", default-features = false, features = ["u32_backend"] }
+ed25519-dalek = { version = "0.9.1", default-features = false, features = ["u32_backend"] }
+sha2 = { version = "0.8.0", default-features = false }
+aes = "0.7.5"
+ccm = "0.4.4"
+hkdf = "0.8.0"
+digest = "0.8.1"
+coap-lite = { version = "0.3.0", default-features = false }
+session_types = "0.3.1"
+rand_core = "0.3.1"
+#oscore = {git = "https://github.com/martindisch/oscore"}
+
+[build-dependencies]
+embuild = "0.28"
+anyhow = "1"
