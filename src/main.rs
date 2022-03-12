@@ -29,7 +29,7 @@ fn main() {
     let b = vec![5, 6, 7, 8];
     let c = xor(&a, &b);
     println!("{:?}", c);
-    rust();
+    test();
 }
 
 pub fn xor(a: &Vec<u8>, b: &Vec<u8>) -> Vec<u8> {
