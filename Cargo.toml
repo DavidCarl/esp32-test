@@ -5,6 +5,7 @@ authors = ["daca <daca@itu.dk>"]
 edition = "2018"
 resolver = "2"
 
+
 [profile.release]
 opt-level = "s"
 
@@ -22,17 +23,16 @@ esp-idf-sys = { version = "0.30.6", features = ["binstart"] }
 serde = { version = "1.0.97", default-features = false, features = ["derive", "alloc"] }
 serde_cbor = { version = "0.11.2", default-features = false, features = ["alloc"] }
 serde_bytes = { version = "0.11.1", default-features = false, features = ["alloc"] }
-x25519-dalek = { version = "0.5.2", default-features = false, features = ["u32_backend"] }
-ed25519-dalek = { version = "0.9.1", default-features = false, features = ["u32_backend"] }
-sha2 = { version = "0.8.0", default-features = false }
-aes = "0.7.5"
+sha2 = { version = "0.10.2", default-features = false }
+aes = "0.8.1"
 ccm = "0.4.4"
-hkdf = "0.8.0"
-digest = "0.8.1"
-coap-lite = { version = "0.3.0", default-features = false }
+hkdf = "0.12.3"
+digest = "0.10.3"
+coap-lite = { version = "0.8.1", default-features = false }
 session_types = "0.3.1"
-rand_core = "0.3.1"
-#oscore = {git = "https://github.com/martindisch/oscore"}
+oscore = {git = "https://github.com/DavidCarl/oscore"}
+x25519-dalek-ng = { version = "1.1.1", default-features = false, features = ["u32_backend"] }
+rand = "*"
 
 [build-dependencies]
 embuild = "0.28"

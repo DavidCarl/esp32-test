@@ -2,12 +2,21 @@ use esp_idf_sys as _; // If using the `binstart` feature of `esp-idf-sys`, alway
 
 extern crate alloc;
 
-use alloc::vec::Vec;
 use alloc::format;
 use alloc::string::String;
+use alloc::vec::Vec;
 
 use core::result::Result;
-use x25519_dalek::{PublicKey, SharedSecret, StaticSecret};
+
+use oscore::edhoc::{
+    error::{OwnError, OwnOrPeerError},
+    PartyI, PartyR,
+};
+
+use x25519_dalek_ng::{PublicKey, StaticSecret};
+
+use rand::rngs::OsRng;
+use rand::{rngs::StdRng, Rng, SeedableRng};
 
 fn main() {
     // Temporary. Will disappear once ESP-IDF 4.4 is released, but for now it is necessary to call this function once,
@@ -15,44 +24,86 @@ fn main() {
     esp_idf_sys::link_patches();
 
     println!("Hello Wolrd");
-    run();
+
+    let a = vec![1, 2, 3, 4];
+    let b = vec![5, 6, 7, 8];
+    let c = xor(&a, &b);
+    println!("{:?}", c);
+    rust();
 }
 
+pub fn xor(a: &Vec<u8>, b: &Vec<u8>) -> Vec<u8> {
+    if a.len() != b.len() {
+        panic!("Attempting to xor vec's of unequal length");
+    }
+
+    let c = a.iter().zip(b.iter()).map(|(&x1, &x2)| x1 ^ x2).collect();
+
+    c
+}
+
+fn test() {
+    //let mut vec = Vec::new();
+    let a = [42;20000];
+    //let mut number = 0;
+    a.to_vec();
+    /*loop{
+        println!("{}", vec.len());
+        vec.push(number);
+        number += 1;
+    }*/
+}
+
+const SUITE_I: isize = 3;
+const METHOD_TYPE_I: isize = 0;
+
 fn run() {
+    let i_static_priv: StaticSecret = StaticSecret::new(OsRng);
+    let i_static_pub = PublicKey::from(&i_static_priv);
+    println!("first");
+    let mut r: StdRng = StdRng::from_entropy();
+    let i_priv = r.gen::<[u8; 32]>();
 
-    let v_auth_pub = [
-        0x1B, 0x66, 0x1E, 0xE5, 0xD5, 0xEF, 0x16, 0x72, 0xA2, 0xD8, 0x77,
-        0xCD, 0x5B, 0xC2, 0x0F, 0x46, 0x30, 0xDC, 0x78, 0xA1, 0x14, 0xDE,
-        0x65, 0x9C, 0x7E, 0x50, 0x4D, 0x0F, 0x52, 0x9A, 0x6B, 0xD3,
-    ];
-    let u_auth_pub = [
-        0x42, 0x4C, 0x75, 0x6A, 0xB7, 0x7C, 0xC6, 0xFD, 0xEC, 0xF0, 0xB3,
-        0xEC, 0xFC, 0xFF, 0xB7, 0x53, 0x10, 0xC0, 0x15, 0xBF, 0x5C, 0xBA,
-        0x2E, 0xC0, 0xA2, 0x36, 0xE6, 0x65, 0x0C, 0x8A, 0xB9, 0xC7,
-    ];
-
-    // Party U ----------------------------------------------------------------
-    // "Generate" an ECDH key pair (this is static, but MUST be ephemeral)
-    // The ECDH private key used by U
-    let u_priv = [
-        0xD4, 0xD8, 0x1A, 0xBA, 0xFA, 0xD9, 0x08, 0xA0, 0xCC, 0xEF, 0xEF,
-        0x5A, 0xD6, 0xB0, 0x5D, 0x50, 0x27, 0x02, 0xF1, 0xC1, 0x6F, 0x23,
-        0x2C, 0x25, 0x92, 0x93, 0x09, 0xAC, 0x44, 0x1B, 0x95, 0x8E,
-    ];
     // Choose a connection identifier
-    let u_c_u = [0xC3].to_vec();
-    // This is the keypair used to authenticate.
-    // V must have the public key.
-    let u_auth_priv = [
-        0x53, 0x21, 0xFC, 0x01, 0xC2, 0x98, 0x20, 0x06, 0x3A, 0x72, 0x50,
-        0x8F, 0xC6, 0x39, 0x25, 0x1D, 0xC8, 0x30, 0xE2, 0xF7, 0x68, 0x3E,
-        0xB8, 0xE3, 0x8A, 0xF1, 0x64, 0xA5, 0xB9, 0xAF, 0x9B, 0xE3,
-    ];
-    let u_kid = [0xA2].to_vec();
-    // This crashes the build!!!
+    let i_c_i = [0x1].to_vec();
 
-    // From the secret bytes, create the DH secret
-    //let secret = StaticSecret::from(u_priv);
+    let i_kid = [0xA2].to_vec();
+    let msg1_sender = PartyI::new(i_c_i, i_priv, i_static_priv, i_static_pub, i_kid);
+    println!("second");
+    let (msg1_bytes, msg2_receiver) = msg1_sender
+        .generate_message_1(METHOD_TYPE_I, SUITE_I)
+        .unwrap();
+    println!("third");
+    let r_static_priv: StaticSecret = StaticSecret::new(OsRng);
+    let r_static_pub = PublicKey::from(&r_static_priv);
+
+    let r_kid = [0xA3].to_vec();
+
+    // create keying material
+
+    let mut r2: StdRng = StdRng::from_entropy();
+    let r_priv = r2.gen::<[u8; 32]>();
+
+    let msg1_receiver = PartyR::new(r_priv, r_static_priv, r_static_pub, r_kid);
+    println!("Fourth");
+    let msg2_sender = match msg1_receiver.handle_message_1(msg1_bytes) {
+        Err(OwnError(b)) => {
+            panic!("{:?}", b)
+        }
+        Ok(val) => val,
+    };
+    println!("Fifth");
+    // TODO: FIND FIX FOR THIS STACK OVERFLOW
+    let (msg2_bytes, msg3_receiver) = match msg2_sender.generate_message_2() {
+        Err(OwnOrPeerError::PeerError(s)) => {
+            panic!("Received error msg: {}", s)
+        }
+        Err(OwnOrPeerError::OwnError(b)) => {
+            panic!("Send these bytes: {}", hexstring(&b))
+        }
+        Ok(val) => val,
+    };
+    println!("six");
 }
 
 fn hexstring(slice: &[u8]) -> String {
