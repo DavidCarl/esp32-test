@@ -20,20 +20,21 @@ native = ["esp-idf-sys/native"]
 [dependencies]
 esp-idf-sys = { version = "0.30.6", features = ["binstart"] }
 
+oscore  = { path = "/home/ask/Git/myoscore/" }
+coap-lite = { version = "0.8.1", default-features = false }
 serde = { version = "1.0.97", default-features = false, features = ["derive", "alloc"] }
 serde_cbor = { version = "0.11.2", default-features = false, features = ["alloc"] }
 serde_bytes = { version = "0.11.1", default-features = false, features = ["alloc"] }
-sha2 = { version = "0.10.2", default-features = false }
-aes = "0.8.1"
-ccm = "0.4.4"
-hkdf = "0.12.3"
-digest = "0.10.3"
-coap-lite = { version = "0.8.1", default-features = false }
-session_types = "0.3.1"
-oscore = {git = "https://github.com/DavidCarl/oscore"}
 x25519-dalek-ng = { version = "1.1.1", default-features = false, features = ["u32_backend"] }
+rand_core = {version = "0.6"}
 rand = "*"
-
 [build-dependencies]
 embuild = "0.28"
 anyhow = "1"
+
+[env]
+# Uncomment this and use the esp-idf-sys "native" build feature (`cargo build --features native`) to build against ESP-IDF 5.0 (master)
+#ESP_IDF_VERSION = { value = "master" }
+
+# Uncomment this and use the esp-idf-sys "native" build feature (`cargo build --features native`) to build against ESP-IDF v4.4
+ESP_IDF_VERSION = { value = "release/v4.4" } 
